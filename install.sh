@@ -39,7 +39,15 @@ echo ""
 echo -e "${amarelo}Digite a opção desejada (1, 2 ou 3) e pressione ENTER${reset}"
 echo -e "${vermelho}Exemplo: Digite 1 e pressione ENTER para instalar o Google Calendar MCP${reset}"
 echo -e "${amarelo}Se você estiver vendo esta mensagem, o script está aguardando sua entrada${reset}"
+
+# Configurar o input para receber do terminal
+exec < /dev/tty
+
+# Ler a entrada do usuário
 read -p "> " opcao
+
+# Fechar o /dev/tty
+exec <&-
 
 # 3. Validação da entrada
 if [[ ! "$opcao" =~ ^[1-3]$ ]]; then
