@@ -38,10 +38,19 @@ sudo bash install.sh
 
 2. Evolution API MCP
    - Envio de mensagens
-   - Criação de grupos
-   - Busca de grupos
-   - Busca de participantes
-   - Requer credenciais da Evolution API
+     - Envio de mensagens de texto
+     - Envio de mídia (imagens, vídeos, documentos)
+     - Envio de áudio
+     - Envio de enquetes
+     - Envio de listas interativas
+   - Gerenciamento de Grupos
+     - Criação de grupos
+     - Atualização de foto do grupo
+     - Envio de convites para grupos
+     - Gerenciamento de participantes (adicionar/remover)
+     - Busca de grupos
+     - Busca de participantes de grupos
+   - Requer credenciais da Evolution API (EVOLUTION_INSTANCIA, EVOLUTION_APIKEY, EVOLUTION_API_BASE)
 
 3. Sair
 
