@@ -4,8 +4,14 @@ Script de instalação automatizada para servidores MCP.
 
 ## Uso
 
-Para instalar, execute os seguintes comandos em sequência:
+Você pode instalar de duas maneiras:
 
+### Opção 1 - Comando em uma linha (Recomendado)
+```bash
+curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh | sudo bash
+```
+
+### Opção 2 - Comandos separados
 ```bash
 # 1. Baixar o script de instalação
 curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh
@@ -28,8 +34,14 @@ sudo bash install.sh
 
 ## Instalação
 
-Para instalar, execute os seguintes comandos em sequência:
+Você pode instalar de duas maneiras:
 
+### Opção 1 - Comando em uma linha (Recomendado)
+```bash
+curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh | sudo bash
+```
+
+### Opção 2 - Comandos separados
 ```bash
 # 1. Baixar o script de instalação
 curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh
