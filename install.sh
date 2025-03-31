@@ -29,7 +29,8 @@ echo -e "${amarelo}3${reset} - Sair"
 echo ""
 
 # 2. Faz a pausa e aguarda a escolha do usuário
-echo -e "${amarelo}Digite a opção desejada (1, 2 ou 3)${reset}"
+echo -e "${amarelo}Digite a opção desejada (1, 2 ou 3) e pressione ENTER${reset}"
+echo -e "${vermelho}Exemplo: Digite 1 e pressione ENTER para instalar o Google Calendar MCP${reset}"
 read -p "> " opcao
 
 # 3. Só depois que o usuário responder e pressionar ENTER,
@@ -385,6 +386,7 @@ EOL
         ;;
     *)
         echo -e "${vermelho}Opção inválida!${reset}"
+        echo -e "${amarelo}Por favor, execute o script novamente e digite uma opção válida (1, 2 ou 3)${reset}"
         exit 1
         ;;
 esac 
