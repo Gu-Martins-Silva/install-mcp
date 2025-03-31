@@ -2,6 +2,14 @@
 
 Script de instalação automatizada para servidores MCP.
 
+## Estrutura do Projeto
+
+O projeto é composto por três scripts principais:
+
+1. `install.sh` - Script principal que exibe o menu e gerencia a instalação
+2. `setup_google.sh` - Script para instalação do Google Calendar MCP
+3. `setup_evolution.sh` - Script para instalação do Evolution API MCP
+
 ## Uso
 
 Você pode instalar de duas maneiras:
@@ -23,32 +31,27 @@ sudo bash install.sh
 ## Opções Disponíveis
 
 1. Google Calendar MCP
+   - Criação de eventos
+   - Busca de eventos
+   - Deleção de eventos
+   - Requer credenciais do Google Calendar API
+
 2. Evolution API MCP
+   - Envio de mensagens
+   - Criação de grupos
+   - Busca de grupos
+   - Busca de participantes
+   - Requer credenciais da Evolution API
+
 3. Sair
 
 ## Requisitos
 
 - Sistema operacional: Debian/Ubuntu
 - Acesso root
-- Credenciais específicas para cada tipo de MCP
-
-## Instalação
-
-Você pode instalar de duas maneiras:
-
-### Opção 1 - Comando em uma linha (Recomendado)
-```bash
-curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh | sudo bash
-```
-
-### Opção 2 - Comandos separados
-```bash
-# 1. Baixar o script de instalação
-curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh
-
-# 2. Executar o script com privilégios de root
-sudo bash install.sh
-```
+- Credenciais específicas para cada tipo de MCP:
+  - Google Calendar: GOOGLE_CALENDAR_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY
+  - Evolution API: EVOLUTION_INSTANCIA, EVOLUTION_APIKEY, EVOLUTION_API_BASE
 
 ## Processo de Instalação
 
