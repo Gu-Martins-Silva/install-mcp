@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Verificar se está rodando como root
+if [ "$EUID" -ne 0 ]; then 
+    echo -e "${vermelho}Este script precisa ser executado como root${reset}"
+    echo -e "${amarelo}Use: sudo bash install.sh${reset}"
+    exit 1
+fi
+
 # Cores para output
 verde="\e[32m"
 vermelho="\e[31m"
@@ -31,10 +38,18 @@ echo ""
 # 2. Faz a pausa e aguarda a escolha do usuário
 echo -e "${amarelo}Digite a opção desejada (1, 2 ou 3) e pressione ENTER${reset}"
 echo -e "${vermelho}Exemplo: Digite 1 e pressione ENTER para instalar o Google Calendar MCP${reset}"
+echo -e "${amarelo}Se você estiver vendo esta mensagem, o script está aguardando sua entrada${reset}"
 read -p "> " opcao
 
-# 3. Só depois que o usuário responder e pressionar ENTER,
-#    o script processa a escolha
+# 3. Validação da entrada
+if [[ ! "$opcao" =~ ^[1-3]$ ]]; then
+    echo -e "${vermelho}Opção inválida!${reset}"
+    echo -e "${amarelo}Por favor, execute o script novamente usando:${reset}"
+    echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh | sudo bash${reset}"
+    exit 1
+fi
+
+# 4. Processamento da escolha
 case $opcao in
     1)
         echo -e "${azul}Iniciando instalação do ABC MCP Google Calendar...${reset}"
@@ -383,10 +398,5 @@ EOL
     3)
         echo -e "${amarelo}Saindo do instalador...${reset}"
         exit 0
-        ;;
-    *)
-        echo -e "${vermelho}Opção inválida!${reset}"
-        echo -e "${amarelo}Por favor, execute o script novamente e digite uma opção válida (1, 2 ou 3)${reset}"
-        exit 1
         ;;
 esac 
