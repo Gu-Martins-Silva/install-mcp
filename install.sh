@@ -45,11 +45,15 @@ if [ -t 0 ]; then
     # Se estiver rodando interativamente
     read -p "> " opcao
 else
-    # Se estiver rodando via pipe
-    echo -e "${amarelo}Por favor, execute o script diretamente:${reset}"
-    echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh${reset}"
-    echo -e "${verde}sudo bash install.sh${reset}"
-    exit 1
+    # Se estiver rodando via pipe, tentar usar /dev/tty
+    if [ -e /dev/tty ]; then
+        read -p "> " opcao < /dev/tty
+    else
+        echo -e "${amarelo}Por favor, execute o script diretamente:${reset}"
+        echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh${reset}"
+        echo -e "${verde}sudo bash install.sh${reset}"
+        exit 1
+    fi
 fi
 
 # 3. Validação da entrada
