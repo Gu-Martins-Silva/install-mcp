@@ -33,28 +33,25 @@ show_menu() {
 
 # Função principal de seleção
 main_selection() {
-    while true; do
-        show_menu
-        case $choice in
-            1)
-                echo -e "\n${verde}Iniciando instalação do Google Calendar MCP...${reset}"
-                main
-                break
-                ;;
-            2)
-                echo -e "\n${verde}Iniciando instalação do Evolution API MCP...${reset}"
-                install_evolution_mcp
-                break
-                ;;
-            3)
-                echo -e "\n${amarelo}Saindo...${reset}"
-                exit 0
-                ;;
-            *)
-                echo -e "\n${vermelho}Opção inválida. Por favor, tente novamente.${reset}"
-                ;;
-        esac
-    done
+    show_menu
+    case $choice in
+        1)
+            echo -e "\n${verde}Iniciando instalação do Google Calendar MCP...${reset}"
+            main
+            ;;
+        2)
+            echo -e "\n${verde}Iniciando instalação do Evolution API MCP...${reset}"
+            install_evolution_mcp
+            ;;
+        3)
+            echo -e "\n${amarelo}Saindo...${reset}"
+            exit 0
+            ;;
+        *)
+            echo -e "\n${vermelho}Opção inválida. Por favor, tente novamente.${reset}"
+            main_selection
+            ;;
+    esac
 }
 
 ## Função para verificar se é root
