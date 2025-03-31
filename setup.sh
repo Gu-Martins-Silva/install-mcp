@@ -43,6 +43,7 @@ main_selection() {
                 ;;
             2)
                 echo -e "\n${verde}Iniciando instalação do Evolution API MCP...${reset}"
+                get_evolution_credentials
                 install_evolution_mcp
                 break
                 ;;
@@ -141,6 +142,89 @@ get_google_credentials() {
             fi
             exec <&-  # Fecha o /dev/tty antes de reiniciar
             get_google_credentials
+            ;;
+    esac
+}
+
+## Função para coletar informações do Evolution API
+get_evolution_credentials() {
+    exec < /dev/tty
+    
+    # EVOLUTION_INSTANCIA
+    echo -e "${azul}Configuração do Evolution API${reset}"
+    echo ""
+    echo -e "\e[97mPasso${amarelo} 1/3${reset}"
+    echo -e "${amarelo}Digite o EVOLUTION_INSTANCIA${reset}"
+    echo -e "${vermelho}Para cancelar a instalação digite: exit${reset}"
+    echo ""
+    read -p "> " EVOLUTION_INSTANCIA
+    if [ "$EVOLUTION_INSTANCIA" = "exit" ]; then
+        echo -e "${vermelho}Instalação cancelada pelo usuário${reset}"
+        exit 1
+    fi
+    
+    # EVOLUTION_APIKEY
+    echo -e "${azul}Configuração do Evolution API${reset}"
+    echo ""
+    echo -e "\e[97mPasso${amarelo} 2/3${reset}"
+    echo -e "${amarelo}Digite o EVOLUTION_APIKEY${reset}"
+    echo -e "${vermelho}Para cancelar a instalação digite: exit${reset}"
+    echo ""
+    read -p "> " EVOLUTION_APIKEY
+    if [ "$EVOLUTION_APIKEY" = "exit" ]; then
+        echo -e "${vermelho}Instalação cancelada pelo usuário${reset}"
+        exit 1
+    fi
+    
+    # EVOLUTION_API_BASE
+    echo -e "${azul}Configuração do Evolution API${reset}"
+    echo ""
+    echo -e "\e[97mPasso${amarelo} 3/3${reset}"
+    echo -e "${amarelo}Digite o EVOLUTION_API_BASE${reset}"
+    echo -e "${vermelho}Para cancelar a instalação digite: exit${reset}"
+    echo ""
+    read -p "> " EVOLUTION_API_BASE
+    if [ "$EVOLUTION_API_BASE" = "exit" ]; then
+        echo -e "${vermelho}Instalação cancelada pelo usuário${reset}"
+        exit 1
+    fi
+    
+    # Confirmação
+    echo -e "${azul}Confirme as informações:${reset}"
+    echo ""
+    echo -e "${amarelo}EVOLUTION_INSTANCIA:${reset} $EVOLUTION_INSTANCIA"
+    echo -e "${amarelo}EVOLUTION_APIKEY:${reset} $EVOLUTION_APIKEY"
+    echo -e "${amarelo}EVOLUTION_API_BASE:${reset} $EVOLUTION_API_BASE"
+    echo ""
+    echo -e "${vermelho}Para cancelar a instalação digite: exit${reset}"
+    echo ""
+    read -p "As informações estão corretas? (Y/N/exit): " confirmacao
+    
+    case $confirmacao in
+        [Yy]* )
+            exec <&-  # Fecha o /dev/tty
+            return 0
+            ;;
+        [Nn]* )
+            echo -e "${amarelo}Reiniciando coleta de informações...${reset}"
+            sleep 2
+            exec <&-  # Fecha o /dev/tty antes de reiniciar
+            get_evolution_credentials
+            ;;
+        "exit" )
+            echo -e "${vermelho}Instalação cancelada pelo usuário${reset}"
+            exit 1
+            ;;
+        * )
+            echo -e "${vermelho}Opção inválida${reset}"
+            echo -e "${amarelo}Pressione ENTER para continuar...${reset}"
+            read -p "> " resposta
+            if [ "$resposta" = "exit" ]; then
+                echo -e "${vermelho}Instalação cancelada pelo usuário${reset}"
+                exit 1
+            fi
+            exec <&-  # Fecha o /dev/tty antes de reiniciar
+            get_evolution_credentials
             ;;
     esac
 }
@@ -886,6 +970,14 @@ install_evolution_mcp() {
     echo -e "${azul}Instalando dependências do projeto...${reset}"
     npm install dotenv axios zod @modelcontextprotocol/sdk
     
+    # Cria arquivo .env
+    echo -e "${azul}Criando arquivo .env...${reset}"
+    cat > .env << EOF
+EVOLUTION_INSTANCIA=$EVOLUTION_INSTANCIA
+EVOLUTION_APIKEY=$EVOLUTION_APIKEY
+EVOLUTION_API_BASE=$EVOLUTION_API_BASE
+EOF
+    
     # Cria arquivo index.js
     echo -e "${azul}Criando arquivo index.js...${reset}"
     cat > index.js << 'EOL'
@@ -1175,6 +1267,8 @@ EOL
 
     echo -e "${verde}Evolution API MCP instalado com sucesso!${reset}"
     echo -e "${azul}Diretório de instalação: /opt/mcp_evo${reset}"
+    echo -e "${azul}Informações do arquivo .env:${reset}"
+    cat .env
 }
 
 ## Função principal
@@ -1182,6 +1276,7 @@ main() {
     check_root
     detect_os
     get_google_credentials
+    get_evolution_credentials
     install_dependencies
     setup_env
     create_refresh_token_script
