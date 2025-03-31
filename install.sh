@@ -40,20 +40,24 @@ echo -e "${amarelo}Digite a opção desejada (1, 2 ou 3) e pressione ENTER${rese
 echo -e "${vermelho}Exemplo: Digite 1 e pressione ENTER para instalar o Google Calendar MCP${reset}"
 echo -e "${amarelo}Se você estiver vendo esta mensagem, o script está aguardando sua entrada${reset}"
 
-# Configurar o input para receber do terminal
-exec < /dev/tty
-
-# Ler a entrada do usuário
-read -p "> " opcao
-
-# Fechar o /dev/tty
-exec <&-
+# Tentar ler a entrada do usuário
+if [ -t 0 ]; then
+    # Se estiver rodando interativamente
+    read -p "> " opcao
+else
+    # Se estiver rodando via pipe
+    echo -e "${amarelo}Por favor, execute o script diretamente:${reset}"
+    echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh${reset}"
+    echo -e "${verde}sudo bash install.sh${reset}"
+    exit 1
+fi
 
 # 3. Validação da entrada
 if [[ ! "$opcao" =~ ^[1-3]$ ]]; then
     echo -e "${vermelho}Opção inválida!${reset}"
     echo -e "${amarelo}Por favor, execute o script novamente usando:${reset}"
-    echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh | sudo bash${reset}"
+    echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh${reset}"
+    echo -e "${verde}sudo bash install.sh${reset}"
     exit 1
 fi
 
