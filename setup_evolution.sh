@@ -62,6 +62,53 @@ const schemas = {
       number: z.string(),
       mensagem: z.string(),
     }),
+    enviaMedia: z.object({      
+      number: z.string(),
+      mediatype: z.string(),
+      mimetype: z.string(),
+      caption: z.string().optional(),
+      media: z.string(),
+      fileName: z.string(),
+    }),
+    enviaAudio: z.object({      
+      number: z.string(),
+      audio: z.string(),
+    }),
+    enviaEnquete: z.object({      
+      number: z.string(),
+      name: z.string(),
+      selectableCount: z.number(),
+      values: z.array(z.string()),
+    }),
+    enviaLista: z.object({      
+      number: z.string(),
+      title: z.string(),
+      description: z.string(),
+      buttonText: z.string(),
+      footerText: z.string(),
+      sections: z.array(z.object({
+        title: z.string(),
+        rows: z.array(z.object({
+          title: z.string(),
+          description: z.string(),
+          rowId: z.string()
+        }))
+      }))
+    }),
+    atualizaFotoGrupo: z.object({      
+      groupJid: z.string(),
+      image: z.string(),
+    }),
+    enviaConviteGrupo: z.object({      
+      groupJid: z.string(),
+      description: z.string(),
+      numbers: z.array(z.string()),
+    }),
+    atualizaParticipantesGrupo: z.object({      
+      groupJid: z.string(),
+      action: z.enum(["add", "remove"]),
+      participants: z.array(z.string()),
+    }),
     criaGrupo: z.object({      
       subject: z.string(),
       description: z.string().optional(),
@@ -87,6 +134,135 @@ const TOOL_DEFINITIONS = [
         mensagem: { type: "string", description: "Texto da mensagem a ser enviada" },
       },
       required: ["number", "mensagem"],
+    },
+  },
+  {
+    name: "envia_media",
+    description: "Envia mensagem com mídia via API Evolution",
+    inputSchema: {
+      type: "object",
+      properties: {       
+        number: { type: "string", description: "Número do destinatário com DDI e DDD" },
+        mediatype: { type: "string", description: "Tipo de mídia (ex: image, video, document)" },
+        mimetype: { type: "string", description: "Tipo MIME do arquivo (ex: image/png)" },
+        caption: { type: "string", description: "Legenda da mídia (opcional)" },
+        media: { type: "string", description: "URL da mídia" },
+        fileName: { type: "string", description: "Nome do arquivo" },
+      },
+      required: ["number", "mediatype", "mimetype", "media", "fileName"],
+    },
+  },
+  {
+    name: "envia_audio",
+    description: "Envia mensagem de áudio via API Evolution",
+    inputSchema: {
+      type: "object",
+      properties: {       
+        number: { type: "string", description: "Número do destinatário com DDI e DDD" },
+        audio: { type: "string", description: "URL do arquivo de áudio" },
+      },
+      required: ["number", "audio"],
+    },
+  },
+  {
+    name: "envia_enquete",
+    description: "Envia mensagem de enquete via API Evolution",
+    inputSchema: {
+      type: "object",
+      properties: {       
+        number: { type: "string", description: "Número do destinatário com DDI e DDD" },
+        name: { type: "string", description: "Texto principal da enquete" },
+        selectableCount: { type: "number", description: "Número de opções que podem ser selecionadas" },
+        values: { 
+          type: "array",
+          items: { type: "string" },
+          description: "Lista de opções da enquete"
+        },
+      },
+      required: ["number", "name", "selectableCount", "values"],
+    },
+  },
+  {
+    name: "envia_lista",
+    description: "Envia mensagem de lista interativa via API Evolution",
+    inputSchema: {
+      type: "object",
+      properties: {       
+        number: { type: "string", description: "Número do destinatário com DDI e DDD" },
+        title: { type: "string", description: "Título da lista" },
+        description: { type: "string", description: "Descrição da lista" },
+        buttonText: { type: "string", description: "Texto do botão" },
+        footerText: { type: "string", description: "Texto do rodapé" },
+        sections: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string", description: "Título da seção" },
+              rows: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string", description: "Título da linha" },
+                    description: { type: "string", description: "Descrição da linha" },
+                    rowId: { type: "string", description: "ID único da linha" }
+                  },
+                  required: ["title", "description", "rowId"]
+                }
+              }
+            },
+            required: ["title", "rows"]
+          }
+        }
+      },
+      required: ["number", "title", "description", "buttonText", "footerText", "sections"],
+    },
+  },
+  {
+    name: "atualiza_foto_grupo",
+    description: "Atualiza a foto de perfil de um grupo via API Evolution",
+    inputSchema: {
+      type: "object",
+      properties: {       
+        groupJid: { type: "string", description: "Identificador do grupo (número@g.us)" },
+        image: { type: "string", description: "URL da imagem para atualizar a foto do grupo" },
+      },
+      required: ["groupJid", "image"],
+    },
+  },
+  {
+    name: "envia_convite_grupo",
+    description: "Envia convite para participar de um grupo via API Evolution",
+    inputSchema: {
+      type: "object",
+      properties: {       
+        groupJid: { type: "string", description: "Identificador do grupo (número@g.us)" },
+        description: { type: "string", description: "Descrição do convite" },
+        numbers: { 
+          type: "array",
+          items: { type: "string" },
+          description: "Lista de números para enviar o convite"
+        },
+      },
+      required: ["groupJid", "description", "numbers"],
+    },
+  },
+  {
+    name: "atualiza_participantes_grupo",
+    description: "Adiciona ou remove participantes de um grupo via API Evolution",
+    inputSchema: {
+      type: "object",
+      properties: {       
+        groupJid: { type: "string", description: "Identificador do grupo (número@g.us)" },
+        action: { type: "string", enum: ["add", "remove"], description: "Ação a ser executada (add: adicionar, remove: remover)" },
+        participants: { 
+          type: "array",
+          items: { type: "string" },
+          description: "Lista de números dos participantes"
+        },
+      },
+      required: ["groupJid", "action", "participants"],
     },
   },
   {
@@ -135,8 +311,8 @@ const toolHandlers = {
     const parsed = schemas.toolInputs.enviaMensagem.parse(args);
     console.log("🔐 Variáveis de ambiente utilizadas:");
     console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
-    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
-    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+   console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+   console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
     const instancia = process.env.EVOLUTION_INSTANCIA;
     const apikey = process.env.EVOLUTION_APIKEY;
     const apiBase = process.env.EVOLUTION_API_BASE || 'sua_url_evolution';
@@ -159,12 +335,218 @@ const toolHandlers = {
     };
   },
 
-  cria_grupo: async (args) => {
-    const parsed = schemas.toolInputs.criaGrupo.parse(args);
+  envia_media: async (args) => {
+    const parsed = schemas.toolInputs.enviaMedia.parse(args);
     console.log("🔐 Variáveis de ambiente utilizadas:");
     console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
     console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
     console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+    const instancia = process.env.EVOLUTION_INSTANCIA;
+    const apikey = process.env.EVOLUTION_APIKEY;
+    const apiBase = process.env.EVOLUTION_API_BASE || 'sua_url_evolution';
+
+    const url = `https://${apiBase}/message/sendMedia/${instancia}`;
+    const response = await axios.post(url, {
+      number: parsed.number,
+      mediatype: parsed.mediatype,
+      mimetype: parsed.mimetype,
+      caption: parsed.caption,
+      media: parsed.media,
+      fileName: parsed.fileName,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': apikey,
+      },
+    });
+    return {
+      content: [{
+        type: "text",
+        text: `Mídia enviada com sucesso para ${parsed.number}.\nResposta: ${JSON.stringify(response.data)}`,
+      }],
+    };
+  },
+
+  envia_audio: async (args) => {
+    const parsed = schemas.toolInputs.enviaAudio.parse(args);
+    console.log("🔐 Variáveis de ambiente utilizadas:");
+    console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+    const instancia = process.env.EVOLUTION_INSTANCIA;
+    const apikey = process.env.EVOLUTION_APIKEY;
+    const apiBase = process.env.EVOLUTION_API_BASE || 'sua_url_evolution';
+
+    const url = `https://${apiBase}/message/sendWhatsAppAudio/${instancia}`;
+    const response = await axios.post(url, {
+      number: parsed.number,
+      audio: parsed.audio,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': apikey,
+      },
+    });
+    return {
+      content: [{
+        type: "text",
+        text: `Áudio enviado com sucesso para ${parsed.number}.\nResposta: ${JSON.stringify(response.data)}`,
+      }],
+    };
+  },
+
+  envia_enquete: async (args) => {
+    const parsed = schemas.toolInputs.enviaEnquete.parse(args);
+    console.log("🔐 Variáveis de ambiente utilizadas:");
+    console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+    const instancia = process.env.EVOLUTION_INSTANCIA;
+    const apikey = process.env.EVOLUTION_APIKEY;
+    const apiBase = process.env.EVOLUTION_API_BASE || 'sua_url_evolution';
+
+    const url = `https://${apiBase}/message/sendPoll/${instancia}`;
+    const response = await axios.post(url, {
+      number: parsed.number,
+      name: parsed.name,
+      selectableCount: parsed.selectableCount,
+      values: parsed.values,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': apikey,
+      },
+    });
+    return {
+      content: [{
+        type: "text",
+        text: `Enquete enviada com sucesso para ${parsed.number}.\nResposta: ${JSON.stringify(response.data)}`,
+      }],
+    };
+  },
+
+  envia_lista: async (args) => {
+    const parsed = schemas.toolInputs.enviaLista.parse(args);
+    console.log("🔐 Variáveis de ambiente utilizadas:");
+    console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+    const instancia = process.env.EVOLUTION_INSTANCIA;
+    const apikey = process.env.EVOLUTION_APIKEY;
+    const apiBase = process.env.EVOLUTION_API_BASE || 'sua_url_evolution';
+
+    const url = `https://${apiBase}/message/sendList/${instancia}`;
+    const response = await axios.post(url, {
+      number: parsed.number,
+      title: parsed.title,
+      description: parsed.description,
+      buttonText: parsed.buttonText,
+      footerText: parsed.footerText,
+      sections: parsed.sections,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': apikey,
+      },
+    });
+    return {
+      content: [{
+        type: "text",
+        text: `Lista enviada com sucesso para ${parsed.number}.\nResposta: ${JSON.stringify(response.data)}`,
+      }],
+    };
+  },
+
+  atualiza_foto_grupo: async (args) => {
+    const parsed = schemas.toolInputs.atualizaFotoGrupo.parse(args);
+    console.log("🔐 Variáveis de ambiente utilizadas:");
+    console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+    const instancia = process.env.EVOLUTION_INSTANCIA;
+    const apikey = process.env.EVOLUTION_APIKEY;
+    const apiBase = process.env.EVOLUTION_API_BASE || 'sua_url_evolution';
+
+    const url = `https://${apiBase}/group/updateGroupPicture/${instancia}?groupJid=${encodeURIComponent(parsed.groupJid)}`;
+    const response = await axios.post(url, {
+      image: parsed.image,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': apikey,
+      },
+    });
+    return {
+      content: [{
+        type: "text",
+        text: `Foto do grupo atualizada com sucesso!\nResposta: ${JSON.stringify(response.data)}`,
+      }],
+    };
+  },
+
+  envia_convite_grupo: async (args) => {
+    const parsed = schemas.toolInputs.enviaConviteGrupo.parse(args);
+    console.log("🔐 Variáveis de ambiente utilizadas:");
+    console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+    const instancia = process.env.EVOLUTION_INSTANCIA;
+    const apikey = process.env.EVOLUTION_APIKEY;
+    const apiBase = process.env.EVOLUTION_API_BASE || 'sua_url_evolution';
+
+    const url = `https://${apiBase}/group/sendInvite/${instancia}`;
+    const response = await axios.post(url, {
+      groupJid: parsed.groupJid,
+      description: parsed.description,
+      numbers: parsed.numbers,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': apikey,
+      },
+    });
+    return {
+      content: [{
+        type: "text",
+        text: `Convites do grupo enviados com sucesso!\nResposta: ${JSON.stringify(response.data)}`,
+      }],
+    };
+  },
+
+  atualiza_participantes_grupo: async (args) => {
+    const parsed = schemas.toolInputs.atualizaParticipantesGrupo.parse(args);
+    console.log("🔐 Variáveis de ambiente utilizadas:");
+    console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+    const instancia = process.env.EVOLUTION_INSTANCIA;
+    const apikey = process.env.EVOLUTION_APIKEY;
+    const apiBase = process.env.EVOLUTION_API_BASE || 'sua_url_evolution';
+
+    const url = `https://${apiBase}/group/updateParticipant/${instancia}?groupJid=${encodeURIComponent(parsed.groupJid)}`;
+    const response = await axios.post(url, {
+      action: parsed.action,
+      participants: parsed.participants,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': apikey,
+      },
+    });
+    return {
+      content: [{
+        type: "text",
+        text: `Participantes do grupo atualizados com sucesso!\nResposta: ${JSON.stringify(response.data)}`,
+      }],
+    };
+  },
+
+  cria_grupo: async (args) => {
+    const parsed = schemas.toolInputs.criaGrupo.parse(args);
+    console.log("🔐 Variáveis de ambiente utilizadas:");
+  console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+  console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+  console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
     const instancia = process.env.EVOLUTION_INSTANCIA;
     const apikey = process.env.EVOLUTION_APIKEY;
     const apiBase = process.env.EVOLUTION_API_BASE || 'url_evolution';
@@ -191,9 +573,9 @@ const toolHandlers = {
   busca_grupos : async (args) => {
     const parsed = schemas.toolInputs.buscaGrupos.parse(args);
     console.log("🔐 Variáveis de ambiente utilizadas:");
-    console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
-    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
-    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+  console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+  console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+  console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
     const instancia = process.env.EVOLUTION_INSTANCIA;
     const apikey = process.env.EVOLUTION_APIKEY;
     const apiBase = process.env.EVOLUTION_API_BASE || 'url_evolution';
@@ -229,9 +611,9 @@ const toolHandlers = {
   busca_participantes_grupo: async (args) => {
     const parsed = schemas.toolInputs.buscaParticipantesGrupo.parse(args);
     console.log("🔐 Variáveis de ambiente utilizadas:");
-    console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
-    console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
-    console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
+  console.log("EVOLUTION_INSTANCIA:", process.env.EVOLUTION_INSTANCIA);
+  console.log("EVOLUTION_APIKEY:", process.env.EVOLUTION_APIKEY);
+  console.log("EVOLUTION_API_BASE:", process.env.EVOLUTION_API_BASE);
     const instancia = process.env.EVOLUTION_INSTANCIA;
     const apikey = process.env.EVOLUTION_APIKEY;
     const apiBase = process.env.EVOLUTION_API_BASE || 'url_evolution';
@@ -329,6 +711,7 @@ if (args.length > 0) {
     process.exit(1);
   });
 }
+
 EOL
 
 echo -e "${verde}Evolution API MCP instalado com sucesso!${reset}" 
