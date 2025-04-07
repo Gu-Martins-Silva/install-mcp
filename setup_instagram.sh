@@ -355,91 +355,69 @@ const toolHandlers = {
     const baseUrl = "https://graph.facebook.com";
 
     try {
-      const url = `${baseUrl}/${apiVersion}/${igUserId}/media`;
-      console.log("\n📤 Criando container de mídia...");
-      console.log("URL:", url);
-      console.log("Dados:", {
+      // Verificar se é um vídeo
+      const isVideo = parsed.imageUrl.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i);
+      if (isVideo) {
+        // Se for vídeo, redirecionar para a função reel
+        return await toolHandlers.reel({
+          videoUrl: parsed.imageUrl,
+          caption: parsed.caption,
+          shareToFeed: true
+        });
+      }
+
+      // ETAPA 1: Criar container de mídia
+      const containerUrl = `${baseUrl}/${apiVersion}/${igUserId}/media`;
+      console.log("\n📤 ETAPA 1: Criando container de mídia...");
+      console.log("URL:", containerUrl);
+
+      const containerData = {
         image_url: parsed.imageUrl,
         caption: parsed.caption,
         alt_text: parsed.altText,
         access_token: accessToken
-      });
+      };
 
-      const response = await axios.post(url, {
-        image_url: parsed.imageUrl,
-        caption: parsed.caption,
-        alt_text: parsed.altText,
-        access_token: accessToken
-      });
+      console.log("Dados:", containerData);
 
-      if (!response.data.id) {
-        throw new Error("Falha ao criar container de mídia");
-      }
+      const containerResponse = await axios.post(containerUrl, containerData);
 
-      const containerId = response.data.id;
-      console.log("✅ Container criado com ID:", containerId);
+      console.log("✅ Container criado:", containerResponse.data);
 
-      // Verificar status do container
-      let status = "IN_PROGRESS";
-      let attempts = 0;
-      const maxAttempts = 5;
-      const interval = 5000; // 5 segundos
-
-      while (status === "IN_PROGRESS" && attempts < maxAttempts) {
-        console.log(`\n🔄 Verificação ${attempts + 1}/${maxAttempts} do status do container...`);
-        const statusUrl = `${baseUrl}/${apiVersion}/${containerId}`;
-        
-        try {
-          const statusResponse = await axios.get(statusUrl, {
-            params: {
-              fields: "status_code",
-              access_token: accessToken
-            }
-          });
-
-          status = statusResponse.data.status_code;
-          console.log("📊 Status atual:", status);
-
-          if (status === "IN_PROGRESS") {
-            console.log("⏳ Container ainda em processamento...");
-            await new Promise(resolve => setTimeout(resolve, interval));
-            attempts++;
-          } else if (status === "FINISHED") {
-            console.log("✅ Container processado com sucesso!");
-            break;
-          } else if (status === "ERROR") {
-            throw new Error(`Erro no processamento do container: ${JSON.stringify(statusResponse.data)}`);
-          }
-        } catch (statusError) {
-          console.error("❌ Erro ao verificar status:", statusError.message);
-          throw new Error(`Falha ao verificar status do container: ${statusError.message}`);
-        }
-      }
-
-      if (status !== "FINISHED") {
-        throw new Error(`Falha no processamento do container. Status final: ${status}`);
-      }
-
-      // Aguardar mais 1 segundo após o status FINISHED
-      console.log("\n⏳ Aguardando 1 segundo adicional para garantir que o container esteja pronto...");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      // Retornar o creation_id para ser usado na publicação
       return {
         content: [{
           type: "text",
-          text: `Container criado com sucesso!\nID do container: ${containerId}`,
+          text: `Container de mídia criado com sucesso!\nID do container: ${containerResponse.data.id}`,
         }],
       };
     } catch (error) {
-      console.error("❌ Erro na chamada API Instagram:", {
+      console.error("❌ Erro detalhado na criação do container:", {
         message: error.message,
         response: error.response?.data,
-        status: error.response?.status
+        status: error.response?.status,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          data: error.config?.data
+        }
       });
       
-      let errorMessage = `Erro ao criar container: ${error.message}`;
-      if (error.response?.data?.error) {
-        errorMessage += `\nDetalhes: ${JSON.stringify(error.response.data.error, null, 2)}`;
+      let errorMessage = `Erro ao criar container de mídia: ${error.message}`;
+      
+      // Tratamento específico para erro 400
+      if (error.response?.status === 400) {
+        const errorData = error.response.data?.error;
+        if (errorData) {
+          errorMessage = `Erro de validação (400): ${errorData.message}`;
+          if (errorData.code) {
+            errorMessage += `\nCódigo do erro: ${errorData.code}`;
+          }
+          if (errorData.error_subcode) {
+            errorMessage += `\nSubcódigo do erro: ${errorData.error_subcode}`;
+          }
+        }
       }
       
       return {
@@ -463,51 +441,27 @@ const toolHandlers = {
     const baseUrl = "https://graph.facebook.com";
 
     try {
-      // First, verify the media container exists and is ready
-      const checkUrl = `${baseUrl}/${apiVersion}/${parsed.creation_id}`;
-      console.log("\n🔍 Verificando status do container antes da publicação...");
-      console.log("URL:", checkUrl);
-      
-      const checkResponse = await axios.get(checkUrl, {
-        params: {
-          fields: "status_code,media_type",
-          access_token: accessToken
-        }
-      });
-
-      console.log("📊 Status do container:", checkResponse.data);
-
-      if (!checkResponse.data) {
-        throw new Error("Container não encontrado ou inacessível");
-      }
-
-      if (checkResponse.data.status_code !== "FINISHED") {
-        throw new Error(`Container não está pronto para publicação. Status atual: ${checkResponse.data.status_code}`);
-      }
-
-      // Wait a short moment to ensure the container is fully processed
-      console.log("\n⏳ Aguardando 2 segundos antes da publicação...");
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const url = `${baseUrl}/${apiVersion}/${igUserId}/media_publish`;
-      console.log("\n📤 Iniciando publicação...");
-      console.log("URL:", url);
+      // Publicar o container imediatamente
+      const publishUrl = `${baseUrl}/${apiVersion}/${igUserId}/media_publish`;
+      console.log("\n📤 Publicando mídia...");
+      console.log("URL:", publishUrl);
       console.log("Dados:", {
         creation_id: parsed.creation_id,
         access_token: accessToken
       });
 
-      const response = await axios.post(url, {
+      const publishResponse = await axios.post(publishUrl, {
         creation_id: parsed.creation_id,
         access_token: accessToken
       });
 
-      console.log("✅ Resposta da publicação:", response.data);
+      console.log("✅ Mídia publicada:", publishResponse.data);
 
+      // Retornar apenas a mensagem de sucesso
       return {
         content: [{
           type: "text",
-          text: `Container publicado com sucesso!\nID da publicação: ${response.data.id}`,
+          text: `Mídia publicada com sucesso!\nID da publicação: ${publishResponse.data.id}`,
         }],
       };
     } catch (error) {
@@ -523,7 +477,7 @@ const toolHandlers = {
         }
       });
       
-      let errorMessage = `Erro ao publicar container: ${error.message}`;
+      let errorMessage = `Erro ao publicar mídia: ${error.message}`;
       
       // Tratamento específico para erro 400
       if (error.response?.status === 400) {
@@ -535,20 +489,6 @@ const toolHandlers = {
           }
           if (errorData.error_subcode) {
             errorMessage += `\nSubcódigo do erro: ${errorData.error_subcode}`;
-          }
-          
-          // Verificar se o container ainda existe
-          try {
-            const checkUrl = `${baseUrl}/${apiVersion}/${parsed.creation_id}`;
-            const checkResponse = await axios.get(checkUrl, {
-              params: {
-                fields: "status_code,media_type",
-                access_token: accessToken
-              }
-            });
-            errorMessage += `\n\nStatus atual do container: ${JSON.stringify(checkResponse.data, null, 2)}`;
-          } catch (checkError) {
-            errorMessage += "\n\nNão foi possível verificar o status atual do container.";
           }
         }
       }
@@ -940,6 +880,12 @@ const toolHandlers = {
     const baseUrl = "https://graph.facebook.com";
 
     try {
+      // Verificar se o vídeo já está sendo processado
+      const isVideo = parsed.videoUrl.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i);
+      if (!isVideo) {
+        throw new Error("URL fornecida não é um vídeo válido");
+      }
+
       // 1. Criar container do Reel
       const createUrl = `${baseUrl}/${apiVersion}/${igUserId}/media`;
       console.log("\n📤 Enviando requisição para criar container do Reel:");
@@ -1126,21 +1072,30 @@ const toolHandlers = {
       const createUrl = `${baseUrl}/${apiVersion}/${igUserId}/media`;
       console.log("\n📤 Criando container do Story...");
       console.log("URL:", createUrl);
-      console.log("Dados:", {
+      
+      const createData = {
         media_type: "STORIES",
-        [parsed.mediaType === "VIDEO" ? "video_url" : "image_url"]: parsed.mediaUrl,
-        background_color: parsed.backgroundColor,
-        sticker: parsed.sticker ? JSON.stringify(parsed.sticker) : undefined,
         access_token: accessToken
-      });
+      };
 
-      const createResponse = await axios.post(createUrl, {
-        media_type: "STORIES",
-        [parsed.mediaType === "VIDEO" ? "video_url" : "image_url"]: parsed.mediaUrl,
-        background_color: parsed.backgroundColor,
-        sticker: parsed.sticker ? JSON.stringify(parsed.sticker) : undefined,
-        access_token: accessToken
-      });
+      // Adicionar URL da mídia baseado no tipo
+      if (parsed.mediaType === "VIDEO") {
+        createData.video_url = parsed.mediaUrl;
+      } else {
+        createData.image_url = parsed.mediaUrl;
+      }
+
+      // Adicionar campos opcionais
+      if (parsed.backgroundColor) {
+        createData.background_color = parsed.backgroundColor;
+      }
+      if (parsed.sticker) {
+        createData.sticker = JSON.stringify(parsed.sticker);
+      }
+
+      console.log("Dados:", createData);
+
+      const createResponse = await axios.post(createUrl, createData);
 
       if (!createResponse.data.id) {
         throw new Error("Falha ao criar container do Story");
@@ -1149,78 +1104,82 @@ const toolHandlers = {
       const containerId = createResponse.data.id;
       console.log("✅ Container criado com ID:", containerId);
 
-      // 2. Verificar status do container
-      let status = "IN_PROGRESS";
-      let attempts = 0;
-      const maxAttempts = 10; // Aumentado para 10 tentativas
-      const interval = 10000; // Aumentado para 10 segundos
+      // 2. Verificar status do container apenas para vídeos
+      if (parsed.mediaType === "VIDEO") {
+        let status = "IN_PROGRESS";
+        let attempts = 0;
+        const maxAttempts = 10;
+        const interval = 10000;
 
-      console.log("\n🔄 Iniciando verificação de status do Story...");
-      console.log("⏱️ Configuração de tempo:");
-      console.log("- Intervalo entre verificações: 10 segundos");
-      console.log("- Número máximo de tentativas: 10");
-      console.log("- Tempo total máximo: 100 segundos");
+        console.log("\n🔄 Iniciando verificação de status do Story (vídeo)...");
+        console.log("⏱️ Configuração de tempo:");
+        console.log("- Intervalo entre verificações: 10 segundos");
+        console.log("- Número máximo de tentativas: 10");
+        console.log("- Tempo total máximo: 100 segundos");
 
-      while (status === "IN_PROGRESS" && attempts < maxAttempts) {
-        const statusUrl = `${baseUrl}/${apiVersion}/${containerId}`;
-        console.log(`\n🔄 Verificação ${attempts + 1}/${maxAttempts}`);
-        console.log("URL:", statusUrl);
-        
-        try {
-          const statusResponse = await axios.get(statusUrl, {
-            params: {
-              fields: "status_code",
-              access_token: accessToken
+        while (status === "IN_PROGRESS" && attempts < maxAttempts) {
+          const statusUrl = `${baseUrl}/${apiVersion}/${containerId}`;
+          console.log(`\n🔄 Verificação ${attempts + 1}/${maxAttempts}`);
+          console.log("URL:", statusUrl);
+          
+          try {
+            const statusResponse = await axios.get(statusUrl, {
+              params: {
+                fields: "status_code",
+                access_token: accessToken
+              }
+            });
+
+            if (!statusResponse.data) {
+              throw new Error("Resposta vazia ao verificar status");
             }
-          });
 
-          if (!statusResponse.data) {
-            throw new Error("Resposta vazia ao verificar status");
+            status = statusResponse.data.status_code;
+            console.log("📊 Status atual:", status);
+
+            if (status === "IN_PROGRESS") {
+              console.log("⏳ Story ainda em processamento...");
+              console.log(`⏱️ Aguardando ${interval/1000} segundos antes da próxima verificação...`);
+              await new Promise(resolve => setTimeout(resolve, interval));
+              attempts++;
+            } else if (status === "FINISHED") {
+              console.log("✅ Story processado com sucesso!");
+              break;
+            } else if (status === "ERROR") {
+              throw new Error(`Erro no processamento do Story: ${JSON.stringify(statusResponse.data)}`);
+            } else {
+              console.log("⚠️ Status desconhecido:", status);
+              throw new Error(`Status desconhecido: ${status}`);
+            }
+          } catch (statusError) {
+            console.error("❌ Erro ao verificar status:", {
+              message: statusError.message,
+              response: statusError.response?.data,
+              status: statusError.response?.status
+            });
+
+            // Se for erro 400, tentar novamente após um delay
+            if (statusError.response?.status === 400) {
+              console.log("⚠️ Erro 400 detectado, tentando novamente após delay...");
+              await new Promise(resolve => setTimeout(resolve, interval));
+              attempts++;
+              continue;
+            }
+
+            throw new Error(`Falha ao verificar status do Story: ${statusError.message}`);
           }
-
-          status = statusResponse.data.status_code;
-          console.log("📊 Status atual:", status);
-
-          if (status === "IN_PROGRESS") {
-            console.log("⏳ Story ainda em processamento...");
-            console.log(`⏱️ Aguardando ${interval/1000} segundos antes da próxima verificação...`);
-            await new Promise(resolve => setTimeout(resolve, interval));
-            attempts++;
-          } else if (status === "FINISHED") {
-            console.log("✅ Story processado com sucesso!");
-            break;
-          } else if (status === "ERROR") {
-            throw new Error(`Erro no processamento do Story: ${JSON.stringify(statusResponse.data)}`);
-          } else {
-            console.log("⚠️ Status desconhecido:", status);
-            throw new Error(`Status desconhecido: ${status}`);
-          }
-        } catch (statusError) {
-          console.error("❌ Erro ao verificar status:", {
-            message: statusError.message,
-            response: statusError.response?.data,
-            status: statusError.response?.status
-          });
-
-          // Se for erro 400, tentar novamente após um delay
-          if (statusError.response?.status === 400) {
-            console.log("⚠️ Erro 400 detectado, tentando novamente após delay...");
-            await new Promise(resolve => setTimeout(resolve, interval));
-            attempts++;
-            continue;
-          }
-
-          throw new Error(`Falha ao verificar status do Story: ${statusError.message}`);
         }
-      }
 
-      if (status !== "FINISHED") {
-        throw new Error(`Falha no processamento do Story. Status final: ${status}\nTentativas realizadas: ${attempts}/${maxAttempts}`);
-      }
+        if (status !== "FINISHED") {
+          throw new Error(`Falha no processamento do Story. Status final: ${status}\nTentativas realizadas: ${attempts}/${maxAttempts}`);
+        }
 
-      // Aguardar mais 2 segundos após o status FINISHED
-      console.log("\n⏳ Aguardando 2 segundos adicionais para garantir que o Story esteja pronto...");
-      await new Promise(resolve => setTimeout(resolve, 2000));
+        // Aguardar mais 2 segundos após o status FINISHED
+        console.log("\n⏳ Aguardando 2 segundos adicionais para garantir que o Story esteja pronto...");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else {
+        console.log("📸 Imagem detectada, pulando verificação de status...");
+      }
 
       // 3. Publicar o Story
       const publishUrl = `${baseUrl}/${apiVersion}/${igUserId}/media_publish`;
