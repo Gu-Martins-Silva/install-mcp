@@ -58,16 +58,39 @@ sudo bash install.sh
    - Requer credenciais da API do Instagram
    - Diretório de instalação: `/opt/mcp_instagram`
    - Funcionalidades:
-     - Criação e publicação de mídia
-     - Gerenciamento de carrosséis
-     - Criação de reels
-     - Gerenciamento de stories
-     - Interações (comentários, curtidas)
-     - Gerenciamento de seguidores
-     - Atualização de perfil
-     - Busca e informações de hashtags
-     - Informações de localização
-     - Busca geral
+     - **Media Management**
+       - `create_media`: Create a new media post with image, caption, location, and hashtags
+       - `publish_media`: Publish a created media post
+       - `create_carousel`: Create a carousel post with multiple images
+       - `create_reel`: Create an Instagram Reel with video and caption
+       - `create_story`: Create an Instagram Story with image/video and optional stickers
+       - `like_media`: Like a media post
+       - `follow_user`: Follow or unfollow a user
+
+     - **Comment Management**
+       - `add_comment`: Add a comment to a media post
+       - `reply_to_comment`: Reply to an existing comment
+
+     - **Profile Management**
+       - `update_profile`: Update user profile information including:
+         - Username
+         - Biography
+         - Business account details
+         - Contact information
+         - Website
+
+     - **Discovery & Search**
+       - `get_hashtag_info`: Get information about a hashtag
+       - `get_location_info`: Get information about a location
+       - `search`: Search for users, hashtags, or locations
+
+     - **Features**
+       - Full Instagram Graph API integration
+       - Support for all media types (posts, carousels, reels, stories)
+       - Comprehensive error handling
+       - Detailed logging
+       - Input validation using Zod schemas
+       - Environment-based configuration
 
 4. Sair
 
@@ -78,6 +101,7 @@ sudo bash install.sh
 - Credenciais específicas para cada tipo de MCP:
   - Google Calendar: GOOGLE_CALENDAR_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY
   - Evolution API: EVOLUTION_INSTANCIA, EVOLUTION_APIKEY, EVOLUTION_API_BASE
+  - Instagram API: INSTAGRAM_USER_ID, INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_TOKEN
 
 ## Processo de Instalação
 
