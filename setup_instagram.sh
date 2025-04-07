@@ -94,7 +94,7 @@ const schemas = {
     }),
     story: z.object({      
       mediaUrl: z.string().url(),
-      mediaType: z.enum(["IMAGE", "VIDEO"]),
+      mediaType: z.string().transform(val => val.toUpperCase()).pipe(z.enum(["IMAGE", "VIDEO"])),
       backgroundColor: z.string().optional(),
       sticker: z.object({
         type: z.string(),
@@ -356,6 +356,15 @@ const toolHandlers = {
 
     try {
       const url = `${baseUrl}/${apiVersion}/${igUserId}/media`;
+      console.log("\n📤 Criando container de mídia...");
+      console.log("URL:", url);
+      console.log("Dados:", {
+        image_url: parsed.imageUrl,
+        caption: parsed.caption,
+        alt_text: parsed.altText,
+        access_token: accessToken
+      });
+
       const response = await axios.post(url, {
         image_url: parsed.imageUrl,
         caption: parsed.caption,
@@ -367,18 +376,76 @@ const toolHandlers = {
         throw new Error("Falha ao criar container de mídia");
       }
 
+      const containerId = response.data.id;
+      console.log("✅ Container criado com ID:", containerId);
+
+      // Verificar status do container
+      let status = "IN_PROGRESS";
+      let attempts = 0;
+      const maxAttempts = 5;
+      const interval = 5000; // 5 segundos
+
+      while (status === "IN_PROGRESS" && attempts < maxAttempts) {
+        console.log(`\n🔄 Verificação ${attempts + 1}/${maxAttempts} do status do container...`);
+        const statusUrl = `${baseUrl}/${apiVersion}/${containerId}`;
+        
+        try {
+          const statusResponse = await axios.get(statusUrl, {
+            params: {
+              fields: "status_code",
+              access_token: accessToken
+            }
+          });
+
+          status = statusResponse.data.status_code;
+          console.log("📊 Status atual:", status);
+
+          if (status === "IN_PROGRESS") {
+            console.log("⏳ Container ainda em processamento...");
+            await new Promise(resolve => setTimeout(resolve, interval));
+            attempts++;
+          } else if (status === "FINISHED") {
+            console.log("✅ Container processado com sucesso!");
+            break;
+          } else if (status === "ERROR") {
+            throw new Error(`Erro no processamento do container: ${JSON.stringify(statusResponse.data)}`);
+          }
+        } catch (statusError) {
+          console.error("❌ Erro ao verificar status:", statusError.message);
+          throw new Error(`Falha ao verificar status do container: ${statusError.message}`);
+        }
+      }
+
+      if (status !== "FINISHED") {
+        throw new Error(`Falha no processamento do container. Status final: ${status}`);
+      }
+
+      // Aguardar mais 1 segundo após o status FINISHED
+      console.log("\n⏳ Aguardando 1 segundo adicional para garantir que o container esteja pronto...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       return {
         content: [{
           type: "text",
-          text: `Container criado com sucesso!\nID do container: ${response.data.id}`,
+          text: `Container criado com sucesso!\nID do container: ${containerId}`,
         }],
       };
     } catch (error) {
-      console.error("Erro na chamada API Instagram:", error);
+      console.error("❌ Erro na chamada API Instagram:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      let errorMessage = `Erro ao criar container: ${error.message}`;
+      if (error.response?.data?.error) {
+        errorMessage += `\nDetalhes: ${JSON.stringify(error.response.data.error, null, 2)}`;
+      }
+      
       return {
         content: [{
           type: "text",
-          text: `Erro ao criar container: ${error.message}`,
+          text: errorMessage,
         }],
       };
     }
@@ -396,11 +463,46 @@ const toolHandlers = {
     const baseUrl = "https://graph.facebook.com";
 
     try {
+      // First, verify the media container exists and is ready
+      const checkUrl = `${baseUrl}/${apiVersion}/${parsed.creation_id}`;
+      console.log("\n🔍 Verificando status do container antes da publicação...");
+      console.log("URL:", checkUrl);
+      
+      const checkResponse = await axios.get(checkUrl, {
+        params: {
+          fields: "status_code,media_type",
+          access_token: accessToken
+        }
+      });
+
+      console.log("📊 Status do container:", checkResponse.data);
+
+      if (!checkResponse.data) {
+        throw new Error("Container não encontrado ou inacessível");
+      }
+
+      if (checkResponse.data.status_code !== "FINISHED") {
+        throw new Error(`Container não está pronto para publicação. Status atual: ${checkResponse.data.status_code}`);
+      }
+
+      // Wait a short moment to ensure the container is fully processed
+      console.log("\n⏳ Aguardando 2 segundos antes da publicação...");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       const url = `${baseUrl}/${apiVersion}/${igUserId}/media_publish`;
+      console.log("\n📤 Iniciando publicação...");
+      console.log("URL:", url);
+      console.log("Dados:", {
+        creation_id: parsed.creation_id,
+        access_token: accessToken
+      });
+
       const response = await axios.post(url, {
         creation_id: parsed.creation_id,
         access_token: accessToken
       });
+
+      console.log("✅ Resposta da publicação:", response.data);
 
       return {
         content: [{
@@ -409,11 +511,52 @@ const toolHandlers = {
         }],
       };
     } catch (error) {
-      console.error("Erro na chamada API Instagram:", error);
+      console.error("❌ Erro detalhado na publicação:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          data: error.config?.data
+        }
+      });
+      
+      let errorMessage = `Erro ao publicar container: ${error.message}`;
+      
+      // Tratamento específico para erro 400
+      if (error.response?.status === 400) {
+        const errorData = error.response.data?.error;
+        if (errorData) {
+          errorMessage = `Erro de validação (400): ${errorData.message}`;
+          if (errorData.code) {
+            errorMessage += `\nCódigo do erro: ${errorData.code}`;
+          }
+          if (errorData.error_subcode) {
+            errorMessage += `\nSubcódigo do erro: ${errorData.error_subcode}`;
+          }
+          
+          // Verificar se o container ainda existe
+          try {
+            const checkUrl = `${baseUrl}/${apiVersion}/${parsed.creation_id}`;
+            const checkResponse = await axios.get(checkUrl, {
+              params: {
+                fields: "status_code,media_type",
+                access_token: accessToken
+              }
+            });
+            errorMessage += `\n\nStatus atual do container: ${JSON.stringify(checkResponse.data, null, 2)}`;
+          } catch (checkError) {
+            errorMessage += "\n\nNão foi possível verificar o status atual do container.";
+          }
+        }
+      }
+      
       return {
         content: [{
           type: "text",
-          text: `Erro ao publicar container: ${error.message}`,
+          text: errorMessage,
         }],
       };
     }
@@ -981,6 +1124,16 @@ const toolHandlers = {
     try {
       // 1. Criar container do Story
       const createUrl = `${baseUrl}/${apiVersion}/${igUserId}/media`;
+      console.log("\n📤 Criando container do Story...");
+      console.log("URL:", createUrl);
+      console.log("Dados:", {
+        media_type: "STORIES",
+        [parsed.mediaType === "VIDEO" ? "video_url" : "image_url"]: parsed.mediaUrl,
+        background_color: parsed.backgroundColor,
+        sticker: parsed.sticker ? JSON.stringify(parsed.sticker) : undefined,
+        access_token: accessToken
+      });
+
       const createResponse = await axios.post(createUrl, {
         media_type: "STORIES",
         [parsed.mediaType === "VIDEO" ? "video_url" : "image_url"]: parsed.mediaUrl,
@@ -993,25 +1146,172 @@ const toolHandlers = {
         throw new Error("Falha ao criar container do Story");
       }
 
-      // 2. Publicar o Story
+      const containerId = createResponse.data.id;
+      console.log("✅ Container criado com ID:", containerId);
+
+      // 2. Verificar status do container
+      let status = "IN_PROGRESS";
+      let attempts = 0;
+      const maxAttempts = 10; // Aumentado para 10 tentativas
+      const interval = 10000; // Aumentado para 10 segundos
+
+      console.log("\n🔄 Iniciando verificação de status do Story...");
+      console.log("⏱️ Configuração de tempo:");
+      console.log("- Intervalo entre verificações: 10 segundos");
+      console.log("- Número máximo de tentativas: 10");
+      console.log("- Tempo total máximo: 100 segundos");
+
+      while (status === "IN_PROGRESS" && attempts < maxAttempts) {
+        const statusUrl = `${baseUrl}/${apiVersion}/${containerId}`;
+        console.log(`\n🔄 Verificação ${attempts + 1}/${maxAttempts}`);
+        console.log("URL:", statusUrl);
+        
+        try {
+          const statusResponse = await axios.get(statusUrl, {
+            params: {
+              fields: "status_code",
+              access_token: accessToken
+            }
+          });
+
+          if (!statusResponse.data) {
+            throw new Error("Resposta vazia ao verificar status");
+          }
+
+          status = statusResponse.data.status_code;
+          console.log("📊 Status atual:", status);
+
+          if (status === "IN_PROGRESS") {
+            console.log("⏳ Story ainda em processamento...");
+            console.log(`⏱️ Aguardando ${interval/1000} segundos antes da próxima verificação...`);
+            await new Promise(resolve => setTimeout(resolve, interval));
+            attempts++;
+          } else if (status === "FINISHED") {
+            console.log("✅ Story processado com sucesso!");
+            break;
+          } else if (status === "ERROR") {
+            throw new Error(`Erro no processamento do Story: ${JSON.stringify(statusResponse.data)}`);
+          } else {
+            console.log("⚠️ Status desconhecido:", status);
+            throw new Error(`Status desconhecido: ${status}`);
+          }
+        } catch (statusError) {
+          console.error("❌ Erro ao verificar status:", {
+            message: statusError.message,
+            response: statusError.response?.data,
+            status: statusError.response?.status
+          });
+
+          // Se for erro 400, tentar novamente após um delay
+          if (statusError.response?.status === 400) {
+            console.log("⚠️ Erro 400 detectado, tentando novamente após delay...");
+            await new Promise(resolve => setTimeout(resolve, interval));
+            attempts++;
+            continue;
+          }
+
+          throw new Error(`Falha ao verificar status do Story: ${statusError.message}`);
+        }
+      }
+
+      if (status !== "FINISHED") {
+        throw new Error(`Falha no processamento do Story. Status final: ${status}\nTentativas realizadas: ${attempts}/${maxAttempts}`);
+      }
+
+      // Aguardar mais 2 segundos após o status FINISHED
+      console.log("\n⏳ Aguardando 2 segundos adicionais para garantir que o Story esteja pronto...");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // 3. Publicar o Story
       const publishUrl = `${baseUrl}/${apiVersion}/${igUserId}/media_publish`;
-      const publishResponse = await axios.post(publishUrl, {
-        creation_id: createResponse.data.id,
+      console.log("\n📤 Iniciando processo de publicação do Story...");
+      console.log("URL:", publishUrl);
+      console.log("Dados:", {
+        creation_id: containerId,
         access_token: accessToken
       });
+      
+      try {
+        const publishResponse = await axios.post(publishUrl, {
+          creation_id: containerId,
+          access_token: accessToken
+        });
 
-      return {
-        content: [{
-          type: "text",
-          text: `Story publicado com sucesso!\nID da publicação: ${publishResponse.data.id}`,
-        }],
-      };
+        console.log("✅ Resposta da publicação:", publishResponse.data);
+
+        // Verificar o tipo de produto após a publicação
+        const verifyUrl = `${baseUrl}/${apiVersion}/${publishResponse.data.id}`;
+        const verifyResponse = await axios.get(verifyUrl, {
+          params: {
+            fields: "media_product_type",
+            access_token: accessToken
+          }
+        });
+
+        console.log("📊 Verificação pós-publicação:", verifyResponse.data);
+
+        return {
+          content: [{
+            type: "text",
+            text: `Story publicado com sucesso!\nID da publicação: ${publishResponse.data.id}\nTipo de produto: ${verifyResponse.data.media_product_type}`,
+          }],
+        };
+      } catch (publishError) {
+        console.error("❌ Erro detalhado na publicação:", {
+          message: publishError.message,
+          response: publishError.response?.data,
+          status: publishError.response?.status,
+          headers: publishError.response?.headers,
+          config: {
+            url: publishError.config?.url,
+            method: publishError.config?.method,
+            data: publishError.config?.data
+          }
+        });
+
+        // Verificar se o container ainda existe e seu status
+        try {
+          const checkUrl = `${baseUrl}/${apiVersion}/${containerId}`;
+          const checkResponse = await axios.get(checkUrl, {
+            params: {
+              fields: "status_code",
+              access_token: accessToken
+            }
+          });
+          console.log("📊 Status atual do container:", checkResponse.data);
+        } catch (checkError) {
+          console.error("❌ Erro ao verificar status do container:", checkError.message);
+        }
+
+        let errorMessage = `Erro ao publicar Story: ${publishError.message}`;
+        if (publishError.response?.data?.error) {
+          errorMessage += `\nDetalhes do erro: ${JSON.stringify(publishError.response.data.error, null, 2)}`;
+        }
+        
+        return {
+          content: [{
+            type: "text",
+            text: errorMessage,
+          }],
+        };
+      }
     } catch (error) {
-      console.error("Erro na chamada API Instagram:", error);
+      console.error("❌ Erro na chamada API Instagram:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers
+      });
+      
+      let errorMessage = `Erro ao processar Story: ${error.message}`;
+      if (error.response?.data?.error) {
+        errorMessage += `\nDetalhes: ${JSON.stringify(error.response.data.error, null, 2)}`;
+      }
+      
       return {
         content: [{
           type: "text",
-          text: `Erro ao processar Story: ${error.message}`,
+          text: errorMessage,
         }],
       };
     }
