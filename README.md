@@ -9,6 +9,7 @@ O projeto é composto por três scripts principais:
 1. `install.sh` - Script principal que exibe o menu e gerencia a instalação
 2. `setup_google.sh` - Script para instalação do Google Calendar MCP
 3. `setup_evolution.sh` - Script para instalação do Evolution API MCP
+4. `setup_instagram.sh` - Script para instalação do Instagram MCP
 
 ## Uso
 
@@ -52,7 +53,23 @@ sudo bash install.sh
      - Busca de participantes de grupos
    - Requer credenciais da Evolution API (EVOLUTION_INSTANCIA, EVOLUTION_APIKEY, EVOLUTION_API_BASE)
 
-3. Sair
+3. Instagram MCP
+   - Instala e configura o MCP para integração com Instagram
+   - Requer credenciais da API do Instagram
+   - Diretório de instalação: `/opt/mcp_instagram`
+   - Funcionalidades:
+     - Criação e publicação de mídia
+     - Gerenciamento de carrosséis
+     - Criação de reels
+     - Gerenciamento de stories
+     - Interações (comentários, curtidas)
+     - Gerenciamento de seguidores
+     - Atualização de perfil
+     - Busca e informações de hashtags
+     - Informações de localização
+     - Busca geral
+
+4. Sair
 
 ## Requisitos
 
