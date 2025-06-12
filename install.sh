@@ -123,7 +123,7 @@ case $opcao in
         if [ $? -eq 0 ]; then
             echo -e "${verde}Script baixado com sucesso!${reset}"
             chmod +x setup_ebook.sh
-            sudo ./setup_ebook.sh
+            ./setup_ebook.sh
         else
             echo -e "${vermelho}Erro ao baixar o script. Verifique sua conexão com a internet e tente novamente.${reset}"
             exit 1
