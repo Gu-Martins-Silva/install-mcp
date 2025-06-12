@@ -32,11 +32,12 @@ echo -e "${azul}Opções disponíveis:${reset}"
 echo -e "${amarelo}1${reset} - Google Calendar MCP"
 echo -e "${amarelo}2${reset} - Evolution API MCP"
 echo -e "${amarelo}3${reset} - Instagram MCP"
-echo -e "${amarelo}4${reset} - Sair"
+echo -e "${amarelo}4${reset} - Ebook MCP"
+echo -e "${amarelo}5${reset} - Sair"
 echo ""
 
 # 2. Faz a pausa e aguarda a escolha do usuário
-echo -e "${amarelo}Digite a opção desejada (1, 2, 3 ou 4) e pressione ENTER${reset}"
+echo -e "${amarelo}Digite a opção desejada (1, 2, 3, 4 ou 5) e pressione ENTER${reset}"
 echo -e "${vermelho}Exemplo: Digite 1 e pressione ENTER para instalar o Google Calendar MCP${reset}"
 echo -e "${amarelo}Se você estiver vendo esta mensagem, o script está aguardando sua entrada${reset}"
 
@@ -50,17 +51,17 @@ else
         read -p "> " opcao < /dev/tty
     else
         echo -e "${amarelo}Por favor, execute o script diretamente:${reset}"
-        echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh${reset}"
+        echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/install.sh > install.sh${reset}"
         echo -e "${verde}sudo bash install.sh${reset}"
         exit 1
     fi
 fi
 
 # 3. Validação da entrada
-if [[ ! "$opcao" =~ ^[1-4]$ ]]; then
+if [[ ! "$opcao" =~ ^[1-5]$ ]]; then
     echo -e "${vermelho}Opção inválida!${reset}"
     echo -e "${amarelo}Por favor, execute o script novamente usando:${reset}"
-    echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh${reset}"
+    echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/install.sh > install.sh${reset}"
     echo -e "${verde}sudo bash install.sh${reset}"
     exit 1
 fi
@@ -72,7 +73,7 @@ case $opcao in
         echo -e "${amarelo}Baixando script de configuração...${reset}"
         
         # Baixar o script setup.sh
-        curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/setup_google.sh -o setup_google.sh
+        curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/setup_google.sh -o setup_google.sh
         
         if [ $? -eq 0 ]; then
             echo -e "${verde}Script baixado com sucesso!${reset}"
@@ -88,7 +89,7 @@ case $opcao in
         echo -e "${amarelo}Baixando script de configuração...${reset}"
         
         # Baixar o script setup.sh
-        curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/setup_evolution.sh -o setup_evolution.sh
+        curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/setup_evolution.sh -o setup_evolution.sh
         
         if [ $? -eq 0 ]; then
             echo -e "${verde}Script baixado com sucesso!${reset}"
@@ -104,7 +105,7 @@ case $opcao in
         echo -e "${amarelo}Baixando script de configuração...${reset}"
         
         # Baixar o script setup.sh
-        curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/setup_instagram.sh -o setup_instagram.sh
+        curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/setup_instagram.sh -o setup_instagram.sh
         
         if [ $? -eq 0 ]; then
             echo -e "${verde}Script baixado com sucesso!${reset}"
@@ -116,6 +117,19 @@ case $opcao in
         fi
         ;;
     4)
+        echo -e "${azul}Iniciando instalação do Ebook MCP...${reset}"
+        echo -e "${amarelo}Baixando script de configuração...${reset}"
+        curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/setup_ebook.sh -o setup_ebook.sh
+        if [ $? -eq 0 ]; then
+            echo -e "${verde}Script baixado com sucesso!${reset}"
+            chmod +x setup_ebook.sh
+            sudo ./setup_ebook.sh
+        else
+            echo -e "${vermelho}Erro ao baixar o script. Verifique sua conexão com a internet e tente novamente.${reset}"
+            exit 1
+        fi
+        ;;
+    5)
         echo -e "${amarelo}Saindo do instalador...${reset}"
         exit 0
         ;;
