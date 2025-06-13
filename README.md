@@ -10,6 +10,7 @@ O projeto é composto por três scripts principais:
 2. `setup_google.sh` - Script para instalação do Google Calendar MCP
 3. `setup_evolution.sh` - Script para instalação do Evolution API MCP
 4. `setup_instagram.sh` - Script para instalação do Instagram MCP
+5. `setup_ebook.sh` - Script para instalação do Ebook MCP
 
 ## Uso
 
@@ -17,13 +18,13 @@ Você pode instalar de duas maneiras:
 
 ### Opção 1 - Comando em uma linha (Recomendado)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/install.sh | sudo bash
 ```
 
 ### Opção 2 - Comandos separados
 ```bash
 # 1. Baixar o script de instalação
-curl -fsSL https://raw.githubusercontent.com/ABCMilioli/install-mcp/main/install.sh > install.sh
+curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/install.sh > install.sh
 
 # 2. Executar o script com privilégios de root
 sudo bash install.sh
@@ -92,7 +93,22 @@ sudo bash install.sh
        - Input validation using Zod schemas
        - Environment-based configuration
 
-4. Sair
+4. Ebook MCP
+   - Instala e configura o MCP para integração com eBooks (EPUB, PDF, etc)
+   - Baseado no repositório: https://github.com/onebirdrocks/ebook-mcp
+   - Diretório de instalação: `/opt/ebook-mcp`
+   - Funcionalidades:
+     - **Gerenciamento de Biblioteca**
+       - Listar arquivos EPUB/PDF
+       - Buscar livros por tema, autor, etc
+     - **Leitura Interativa**
+       - Conversar sobre o conteúdo do livro
+       - Obter resumo, capítulos, metadados
+     - **APIs Disponíveis**
+       - get_all_epub_files, get_metadata, get_toc, get_chapter_markdown, get_all_pdf_files, get_pdf_metadata, get_pdf_toc, get_pdf_page_text, get_pdf_page_markdown, get_pdf_chapter_content
+   - Requer Python 3, uv e dependências do projeto
+
+5. Sair
 
 ## Requisitos
 
@@ -102,6 +118,7 @@ sudo bash install.sh
   - Google Calendar: GOOGLE_CALENDAR_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY
   - Evolution API: EVOLUTION_INSTANCIA, EVOLUTION_APIKEY, EVOLUTION_API_BASE
   - Instagram API: INSTAGRAM_USER_ID, INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_TOKEN
+  - Ebook MCP: (verifique .env.example para variáveis necessárias)
 
 ## Processo de Instalação
 
@@ -116,4 +133,4 @@ O script irá:
 
 ## Suporte
 
-Para suporte, abra uma issue no repositório: https://github.com/ABCMilioli/install-mcp/issues 
+Para suporte, abra uma issue no repositório: https://github.com/Gu-Martins-Silva/install-mcp/issues 
