@@ -51,7 +51,7 @@ else
         read -p "> " opcao < /dev/tty
     else
         echo -e "${amarelo}Por favor, execute o script diretamente:${reset}"
-        echo -e "${verde}curl -fsSL ${BASE_URL} > install.sh${reset}"
+        echo -e "${verde}curl -fsSL https://raw.githubusercontent.com/Gu-Martins-Silva/install-mcp/main/install.sh > install.sh${reset}"
         echo -e "${verde}sudo bash install.sh${reset}"
         exit 1
     fi
